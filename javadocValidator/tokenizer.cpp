@@ -38,7 +38,7 @@ std::set< Tokenized, TokenizedComparator > Tokenizer::tokenize(std::string &inpu
 {
     removeBackslashes(input);
 
-    for (Tokens token = Tokens::commentBegin;
+    for (Tokens token = Tokens::all;
         token < Tokens::NonterminalsCount;
         token = (Tokens)(std::underlying_type<Tokens>::type(token) + 1)) {
 

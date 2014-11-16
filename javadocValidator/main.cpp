@@ -2,7 +2,9 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+
 #include "tokenizer.h"
+#include "parser.h"
 
 #define FILE_NAME "../input.c"
 
@@ -16,9 +18,15 @@ int main()
     string inputString(static_cast< stringstream const& >
                        (stringstream() << input.rdbuf()).str());
 
+    Parser p(inputString, FILE_NAME);
     Tokenizer t;
-    t.tokenize(inputString);
-    cout << "Hello World!" << endl;
+    p.initList(t.tokenize(inputString));
+    p.parseFile();
+    //avare of empty input
+    cout << "Hello World!" << endl << endl;
+    cout << inputString << endl;
+
+    input.close();
     return 0;
 }
 

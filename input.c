@@ -1,11 +1,17 @@
-/**
+/**  @a                                        start
  * @author Karel Kubicek
- * @file input.c
+ * @file ../input.c
+ *
+ * @a
  *
  * foo and bar are members of club "foobar club"
  * \\"\\'\[\'112\][!@#$%&^^*&(*)()_*(}
  * :|"?>?
  */
+
+
+
+
 
 /**
  * @brief main

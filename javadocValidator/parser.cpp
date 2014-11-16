@@ -27,6 +27,27 @@ bool Parser::parseFile()
     return true;
 }
 
+void Parser::checkForBadKeyword(std::list< Tokenized >::iterator it)
+{
+    auto tmpIt = it; //found double quote begin
+
+    --tmpIt;
+    if (isKeyword(tmpIt) && tmpIt->second == it->second) {
+        nonterminalsList.erase(it);
+        return;
+    }
+    ++tmpIt;
+    ++tmpIt;
+    if (isKeyword(tmpIt) && tmpIt->second == it->second) {
+        nonterminalsList.erase(it);
+        return;
+    }
+
+    std::cout << "Warning: unrecognized keyword: " << getNextWord(it)
+              << std::endl;
+    return;
+}
+
 bool Parser::filterUnreachableNontokens()
 {
     std::list< Tokenized >::iterator beginIt;
@@ -36,11 +57,14 @@ bool Parser::filterUnreachableNontokens()
             //skip doxygen comment
             while (it->first != Tokens::commentEnd) {
                 ++it;
+
                 if (it == nonterminalsList.end()) {
                     std::cout << "Error: code has unfinished doxygen comment"
                               << std::endl;
                     return false;
                 }
+                if (it->first == Tokens::at)
+                    checkForBadKeyword(it);
             }
             break;
         }
@@ -83,13 +107,30 @@ bool Parser::filterUnreachableNontokens()
                               << std::endl;
                     break;
                 }
-                /*if (isPreviousCharacterBackslash(it)) {
-                    ++it;
-                    continue;
-                }*/
                 ++it;
             }
             nonterminalsList.erase(beginIt, it);
+            break;
+        }
+        case Tokens::singleQuotes: {
+            beginIt = it; //found single quote begin
+
+            //single quotes can take 2 or 1 char, in case of two, it is escaped
+            //escaped characters are deleted = 0 characters between ''
+            ++it;
+            if (it->first == Tokens::singleQuotes) {
+                nonterminalsList.erase(beginIt, it);
+                break;
+            }
+            //one character between ' '
+            ++it;
+            if (it->first == Tokens::singleQuotes){
+                nonterminalsList.erase(beginIt, it);
+                break;
+            }
+
+            std::cout << "Warning: missing end of single quote"
+                      << std::endl;
             break;
         }
         default:
@@ -192,16 +233,17 @@ bool Parser::parseHeader(std::list< Tokenized >::iterator it)
                 return false;
             }
 
-            auto file = getTextLine(it);
+            ++it; //step on next token (from @file)
+            auto file = getNextWord(it);
             if (file.empty()) {
                 std::cout << "Error: file position is empty" << std::endl;
                 return false;
             }
 
             if (file != fileName) {
-                std::cout << "Error: file name doesnt match, expcted:"
+                std::cout << "Error: file name doesnt match, expcted: "
                           << fileName
-                          << " , got: "
+                          << ", got: "
                           << file
                           << std::endl;
                 return false;
@@ -223,6 +265,19 @@ bool Parser::parseHeader(std::list< Tokenized >::iterator it)
             break;
         }
     }
+
+    if (!hasAuthor) {
+        std::cout << "Error: missing @author command in header" << std::endl;
+        return false;
+    }
+    if (!hasFile && !hasVersion) {
+        std::cout << "Error: missing both javadoc style @version and doxygen @file command in header"
+                  << std::endl;
+        return false;
+    }
+    if (!hasFile)
+        std::cout << "Warning: missing @file command in header" << std::endl;
+
     return true;
 }
 
@@ -235,10 +290,16 @@ std::string::size_type Parser::getEnd(std::list< Tokenized >::iterator it)
 std::string Parser::getTextLine(std::list< Tokenized >::iterator &it)
 {
     auto begin = it;
-    while(it->first != Tokens::newLine && it != nonterminalsList.end())
+    while (it->first != Tokens::newLine && it != nonterminalsList.end())
         ++it;
 
     return input.substr(begin->second, it->second); //TODO: test if returns \0
+}
+
+std::string Parser::getNextWord(std::list< Tokenized >::iterator &it)
+{
+    std::string output = input.substr(it->second, getEnd(it) - it->second);
+    return output.substr(output.find_first_not_of(' '), output.size());
 }
 
 bool Parser::isDoxygenComment(std::list< Tokenized >::iterator it)
@@ -254,19 +315,11 @@ bool Parser::isDoxygenComment(std::list< Tokenized >::iterator it)
     return false;
 }
 
-/*bool Parser::isPreviousCharacterBackslash(std::list< Tokenized >::iterator it)
-{
-    auto position = it->second;
-    if (position < 1)
-        return false;
-
-    --position;
-    //there may be more tokens on position, search until token is before previous character
-    while (it->second > position) {
-        --it;
-        if (it->first == Tokens::backslash)
-            return true;
-    }
-
-    return false;
-}*/
+bool Parser::isKeyword(std::list< Tokenized >::iterator it) {
+    return (it->first == Tokens::atAuthor
+            || it->first == Tokens::atBrief
+            || it->first == Tokens::atFile
+            || it->first == Tokens::atParam
+            || it->first == Tokens::atReturn
+            || it->first == Tokens::atVersion);
+}

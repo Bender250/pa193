@@ -36,7 +36,6 @@ enum class Tokens : std::uint8_t {
         space,
         newLine,
         tab,
-    SimpleTokens,
     at,
     doubleQuotes,
     singleQuotes,

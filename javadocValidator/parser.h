@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <list>
 #include <iterator>
+#include <algorithm>
 #include <tuple>
 
 #include "tokenizer.h"
@@ -25,13 +26,16 @@ private:
     void filterCommentedNontokens();
     void filterRepeatingWhitespace();
 
+    void checkForBadKeyword(std::list< Tokenized >::iterator it);
+
     bool parseHeader(std::list< Tokenized >::iterator it);
     std::string::size_type getEnd(std::list< Tokenized >::iterator it);
     std::string getTextLine(std::list< Tokenized >::iterator &it);
 
     bool isDoxygenComment(std::list< Tokenized >::iterator it);
-    //bool isPreviousCharacterBackslash(std::list< Tokenized >::iterator it);
     bool isSpaceOrTab(std::list<Tokenized>::iterator it);
+    std::string getNextWord(std::list<Tokenized>::iterator &it);
+    bool isKeyword(std::list<Tokenized>::iterator it);
 };
 
 #endif // PARSER_H
