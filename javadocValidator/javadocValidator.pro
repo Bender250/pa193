@@ -7,10 +7,12 @@ CONFIG += c++11
 QMAKE_CXXFLAGS += -std=c++11
 
 SOURCES += main.cpp \
-    tokenizer.cpp
+    tokenizer.cpp \
+    parser.cpp
 
 HEADERS += \
-    tokenizer.h
+    tokenizer.h \
+    parser.h
 
 OTHER_FILES +=  \
     ../input.c
