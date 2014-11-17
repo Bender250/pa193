@@ -18,10 +18,17 @@ int main()
     string inputString(static_cast< stringstream const& >
                        (stringstream() << input.rdbuf()).str());
 
-    Parser p(inputString, FILE_NAME);
+    //TODO: call tokenizer from parser to share same input string
     Tokenizer t;
-    p.initList(t.tokenize(inputString));
-    p.parseFile();
+    auto tree = t.tokenize(inputString); //this is temporal solution for TODO problem
+    Parser p(inputString, FILE_NAME);
+    p.initList(tree);
+    if (p.parseFile()) {
+        cout << "Input is valid" << endl << endl;
+    }
+    else {
+        cout << "Input is invalid" << endl << endl;
+    }
     //avare of empty input
     cout << "Hello World!" << endl << endl;
     cout << inputString << endl;

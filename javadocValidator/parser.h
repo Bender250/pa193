@@ -16,6 +16,13 @@ public:
     void initList(std::set< Tokenized, TokenizedComparator > inputSet);
     bool parseFile();
 
+    bool handleDoxygenComment(std::list< Tokenized >::iterator& it,
+                              std::tuple< std::string, std::set< std::string >,
+                                          std::string> &out);
+    bool handleFunction(std::list< Tokenized >::iterator& it,
+                        std::tuple< std::string, std::set< std::string >,
+                                    std::string > &function);
+    std::string getPreviousWord(std::list< Tokenized >::iterator it);
 private:
     std::list< Tokenized > nonterminalsList;
     std::string input;
@@ -25,6 +32,10 @@ private:
     void filterQuotedNontokens();
     void filterCommentedNontokens();
     void filterRepeatingWhitespace();
+
+    bool iterateTroughtDocumentedFunctions();
+
+    void printArguments(std::set< std::string > dox, std::set< std::string > fun);
 
     void checkForBadKeyword(std::list< Tokenized >::iterator it);
 
