@@ -6,22 +6,36 @@
 #include "tokenizer.h"
 #include "parser.h"
 
-#define FILE_NAME "../input.c"
-
 using namespace std;
 
-int main()
+int main(int argc, char** argv)
 {
-    //parse input
+    if (argc < 2) {
+        std::cout << "Usage: " << argv[0]
+                  << " fileToCheck" << std::endl
+                  << "fileToCheck should be in specified without path, "
+                  << "just name of file, so it correspondes with "
+                  << "@file in header of file"
+                  << std::endl;
+        return -1;
+    }
+
     ifstream input;
-    input.open(FILE_NAME, ios_base::in); //retval!
+    input.open(argv[1], ios_base::in);
+    if (!input.is_open()) {
+        std::cout << "Given file could not be open" << std::endl
+                  << argv[1]
+                  << " should be valid path."
+                  << std::endl;
+        return -1;
+    }
     string inputString(static_cast< stringstream const& >
                        (stringstream() << input.rdbuf()).str());
 
-    //TODO: call tokenizer from parser to share same input string
+
     Tokenizer t;
-    auto tree = t.tokenize(inputString); //this is temporal solution for TODO problem
-    Parser p(inputString, FILE_NAME);
+    auto tree = t.tokenize(inputString);
+    Parser p(inputString, argv[1]);
     p.initList(tree);
     if (p.parseFile()) {
         cout << "Input is valid" << endl << endl;
@@ -29,9 +43,6 @@ int main()
     else {
         cout << "Input is invalid" << endl << endl;
     }
-    //avare of empty input
-    cout << "Hello World!" << endl << endl;
-    cout << inputString << endl;
 
     input.close();
     return 0;

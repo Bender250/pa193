@@ -24,9 +24,6 @@ Tokenizer::Tokenizer()
     tokenArray[ static_cast< std::size_t > (Tokens::cppComment) ] = "//";
     tokenArray[ static_cast< std::size_t > (Tokens::singleQuotes) ] = "'";
     tokenArray[ static_cast< std::size_t > (Tokens::doubleQuotes) ] = "\"";
-    tokenArray[ static_cast< std::size_t > (Tokens::asterix) ] = "*";
-    //tokenArray[ static_cast< std::size_t > (Tokens::lBra) ] = "[";
-    //tokenArray[ static_cast< std::size_t > (Tokens::rBra) ] = "]";
 }
 
 Tokenizer::~Tokenizer()

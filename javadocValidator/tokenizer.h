@@ -1,3 +1,9 @@
+/**
+  * @author Team A
+  * @file tokenizer.h
+  *
+  * @brief class Tokenizer is responsible for splitting input into tokens
+  */
 #ifndef TOKENIZER_H
 #define TOKENIZER_H
 #include <iostream>
@@ -43,10 +49,6 @@ enum class Tokens : std::uint8_t {
     cppComment,
     cCommentBegin,
     cCommentEnd,
-    asterix,
-    lBra,
-    rBra,
-    //backslash,
     NonterminalsCount
 };
 

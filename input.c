@@ -31,3 +31,5 @@ bool delete_keys(_In_ char *type_user, _In_ char *pin[10],_In_ int session_id)
 {
 
 }
+
+
