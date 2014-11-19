@@ -38,7 +38,6 @@ public:
      * @return true if file is valid, false otherwise
      */
     bool parseFile();
-
 private:
     std::list< Tokenized > nonterminalsList;
     std::string code;
@@ -65,6 +64,23 @@ private:
      * not necessary function
      */
     void filterRepeatingWhitespace();
+    /**
+     * @brief filterRepeatingSpaceOrTabs
+     * @param it
+     * @param tmpIt
+     * @return false if it step on end of list
+     */
+    bool filterRepeatingSpaceOrTabs(std::list< Tokenized >::iterator it,
+                                    std::list< Tokenized >::iterator tmpIt);
+    /**
+     * @brief filterRepeatingNewlines
+     * @param tmpIt
+     * @param it
+     * @return false if it step on end of list
+     */
+    bool filterRepeatingNewlines(std::list< Tokenized >::iterator tmpIt,
+                                 std::list< Tokenized >::iterator it);
+
 
     /**
      * @brief checkForBadKeyword checks, if is in document used @ with unknown keyword

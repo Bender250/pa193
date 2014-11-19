@@ -88,8 +88,8 @@ bool Parser::filterUnreachableNontokens()
             //handle nondoxygen comment
             else {
                 while (it->first != Tokens::cCommentEnd) {
-                    if (it != nonterminalsList.end()) {
-                        std::cout << "Warning: code has unfinished cpp comment"
+                    if (it == nonterminalsList.end()) {
+                        std::cout << "Warning: code has unfinished c comment"
                                   << std::endl;
                     }
                     ++it;
@@ -104,9 +104,9 @@ bool Parser::filterUnreachableNontokens()
         case Tokens::doubleQuotes: {
             beginIt = it; //found double quote begin
 
-            while (it->first != Tokens::cCommentEnd) {
-                if (it != nonterminalsList.end()) {
-                    std::cout << "Warning: code has unfinished cpp comment"
+            while (it->first != Tokens::doubleQuotes) {
+                if (it == nonterminalsList.end()) {
+                    std::cout << "Warning: code has unfinished double quotes"
                               << std::endl;
                     break;
                 }
@@ -121,12 +121,20 @@ bool Parser::filterUnreachableNontokens()
             //single quotes can take 2 or 1 char, in case of two, it is escaped
             //escaped characters are deleted = 0 characters between ''
             ++it;
+            if (it == nonterminalsList.end()) {
+                std::cout << "Error: unfinished single quotes" << std::endl;
+                return false;
+            }
             if (it->first == Tokens::singleQuotes) {
                 nonterminalsList.erase(beginIt, it);
                 break;
             }
             //one character between ' '
             ++it;
+            if (it == nonterminalsList.end()) {
+                std::cout << "Error: unfinished single quotes" << std::endl;
+                return false;
+            }
             if (it->first == Tokens::singleQuotes){
                 nonterminalsList.erase(beginIt, it);
                 break;
@@ -142,59 +150,76 @@ bool Parser::filterUnreachableNontokens()
     return true;
 }
 
+bool Parser::filterRepeatingSpaceOrTabs(std::list< Tokenized >::iterator it,
+                                        std::list< Tokenized >::iterator tmpIt)
+{
+    //have to delete next whitespace, to correctly hold information about ends of words
+    auto position = it->second;
+    ++it;
+
+    if (it == nonterminalsList.end())
+        return false;
+
+    tmpIt = it;
+
+    while (it != nonterminalsList.end()
+           && position == (it->second - 1)
+           && isSpaceOrTab(it)) {
+        ++position;
+        ++it;
+    }
+
+    if (tmpIt != it) {
+        it = nonterminalsList.erase(tmpIt, it);
+
+        if (it == nonterminalsList.end())
+            return false;
+    }
+
+    return true;
+}
+
+bool Parser::filterRepeatingNewlines(std::list< Tokenized >::iterator tmpIt,
+                                     std::list< Tokenized >::iterator it)
+{
+    //have to delete next whitespace, to correctly hold information about ends of words
+    auto position = it->second;
+    ++it;
+
+    if (it == nonterminalsList.end())
+        return false;
+
+    tmpIt = it;
+
+    while (it != nonterminalsList.end()
+           && position == (it->second - 1)
+           && it->first == Tokens::newLine) {
+        ++position;
+        ++it;
+    }
+
+    if (tmpIt != it) {
+        it = nonterminalsList.erase(tmpIt, it);
+
+        if (it == nonterminalsList.end())
+            return false;
+    }
+
+    return true;
+}
+
 void Parser::filterRepeatingWhitespace()
 {
     auto tmpIt = nonterminalsList.begin();
     for (auto it = nonterminalsList.begin(); it != nonterminalsList.end(); ++it) {
         if (isSpaceOrTab(it)) {
-            //have to delete next whitespace, to correctly hold information about ends of words
-            auto position = it->second;
-            ++it;
-
-            if (it == nonterminalsList.end())
+            if (!filterRepeatingSpaceOrTabs(it, tmpIt))
                 break;
-
-            tmpIt = it;
-
-            while (it != nonterminalsList.end()
-                   && position == (it->second - 1)
-                   && isSpaceOrTab(it)) {
-                ++position;
-                ++it;
-            }
-
-            if (tmpIt != it) {
-                it = nonterminalsList.erase(tmpIt, it);
-
-                if (it == nonterminalsList.end())
-                    break;
-            }
-
         }
-        //different behavior for newlines is beacuse is doxygen, we distinguish between space and newlines
+        //different behavior for newlines is beacuse in doxygen, we distinguish between space and newlines
         if (it->first == Tokens::newLine) {
-            //have to delete next whitespace, to correctly hold information about ends of words
-            auto position = it->second;
-            ++it;
-
-            if (it == nonterminalsList.end())
+            if (!filterRepeatingNewlines(tmpIt, it))
                 break;
-
-            tmpIt = it;
-
-            while (it != nonterminalsList.end()
-                   && position == (it->second - 1)
-                   && it->first == Tokens::newLine) {
-                ++position;
-                ++it;
-            }
-
-            if (tmpIt != it) {
-                it = nonterminalsList.erase(tmpIt, it);
-
-                if (it == nonterminalsList.end())
-                    break;
-            }
         }
     }
 }
@@ -214,6 +239,10 @@ bool Parser::parseHeader(std::list< Tokenized >::iterator it)
         //move to first comment
         while (it->first != Tokens::commentBegin) {
             ++it;
+            if (it == nonterminalsList.end()) {
+                std::cout << "Error: file with no doxygen" << std::endl;
+                return false;
+            }
         }
     }
     bool hasFile = false;
@@ -323,6 +352,10 @@ bool Parser::handleDoxygenComment(std::list< Tokenized >::iterator& it,
             }
 
             ++it;
+            if (it == nonterminalsList.end()) {
+                std::cout << "Error: unfinished doxygen" << std::endl;
+                return false;
+            }
 
             std::string brief = getNextWord(it);
             if (brief.empty())
@@ -333,6 +366,10 @@ bool Parser::handleDoxygenComment(std::list< Tokenized >::iterator& it,
         }
         case Tokens::atParam: {
             ++it;
+            if (it == nonterminalsList.end()) {
+                std::cout << "Error: unfinished doxygen" << std::endl;
+                return false;
+            }
 
             std::string tmpParam = getNextWord(it);
             if (tmpParam.empty())
@@ -353,6 +390,10 @@ bool Parser::handleDoxygenComment(std::list< Tokenized >::iterator& it,
             }
 
             ++it;
+            if (it == nonterminalsList.end()) {
+                std::cout << "Error: unfinished doxygen" << std::endl;
+                return false;
+            }
 
             std::string returnVal = getNextWord(it);
             if (returnVal.empty())
@@ -374,11 +415,6 @@ bool Parser::handleDoxygenComment(std::list< Tokenized >::iterator& it,
         std::cout << "Error: no @brief in comment" << std::endl;
         return false;
     }
-
-    /*if (!hasReturn) {
-        std::cout << "Error: no @return in comment" << std::endl;
-        return false;
-    }*/
     return true;
 }
 
@@ -397,6 +433,10 @@ bool Parser::handleFunction(std::list< Tokenized >::iterator& it,
     }
 
     //--it; returnType = getNextWord(it); // get return value
+    /*this enables parsing, if return value is void (better said _Noreturn),
+     * so @return doesnt have to be specified
+     * it is not supported
+     */
 
     std::string name = getPreviousWord(it);
 
@@ -411,6 +451,7 @@ bool Parser::handleFunction(std::list< Tokenized >::iterator& it,
         ++it;
 
     int openParenthesisCounter = 0;
+    int angleBracketsCounter = 0;
     bool parenthesisEnded = false;
 
     while (it != nonterminalsList.end()
@@ -428,6 +469,8 @@ bool Parser::handleFunction(std::list< Tokenized >::iterator& it,
             //break; //WARNING: commented to behave as comma
         }
         case Tokens::comma: {
+            if (angleBracketsCounter > 0)
+                break;
             std::string tmp = getAttribute(it);
             if (tmp.empty()) {
                 std::cout << "Warning: function arg name is empty" << std::endl;
@@ -441,6 +484,17 @@ bool Parser::handleFunction(std::list< Tokenized >::iterator& it,
                           << (*ret.first) << std::endl;
                 return false;
             }
+            break;
+        }
+        case Tokens::lAngleBracket: {
+            ++angleBracketsCounter;
+            break;
+        }
+        case Tokens::rAngleBracket: {
+            --angleBracketsCounter;
+            if (openParenthesisCounter < 0)
+                std::cout << "Warning: more > than < in function" << std::endl;
+
             break;
         }
         default:
@@ -498,6 +552,9 @@ bool Parser::isSpaceOrTab(std::list< Tokenized >::iterator it) {
 std::string::size_type Parser::getEnd(std::list< Tokenized >::iterator it)
 {
     ++it;
+    if (it == nonterminalsList.end())
+        return std::string::npos;
+
     return it->second;
 }
 
@@ -552,9 +609,16 @@ bool Parser::isDoxygenComment(std::list< Tokenized >::iterator it)
 {
     auto tmpIt = it;
     ++tmpIt;
+    if (tmpIt == nonterminalsList.end())
+        return false;
+
     if (tmpIt->first == Tokens::commentBegin)
         return true;
+
     --it;
+    if (it == nonterminalsList.begin())
+        return false;
+
     if (it->first == Tokens::commentBegin)
         return true;
 
@@ -567,5 +631,8 @@ bool Parser::isKeyword(std::list< Tokenized >::iterator it) {
             || it->first == Tokens::atFile
             || it->first == Tokens::atParam
             || it->first == Tokens::atReturn
-            || it->first == Tokens::atVersion);
+            || it->first == Tokens::atVersion
+            || it->first == Tokens::atSee
+            || it->first == Tokens::atLink
+            || it->first == Tokens::atSince);
 }

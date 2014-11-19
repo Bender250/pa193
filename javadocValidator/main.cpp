@@ -1,3 +1,11 @@
+/**
+ * @author Team A
+ * @file main.cpp
+ * @brief main function for running the parser
+ *
+ * @link https://github.com/Bender250/pa193/wiki for more informations
+ * about supported things
+ */
 #include <iostream>
 #include <fstream>
 #include <sstream>

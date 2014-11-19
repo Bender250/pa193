@@ -11,8 +11,13 @@ Tokenizer::Tokenizer()
     tokenArray[ static_cast< std::size_t > (Tokens::atBrief) ] = "@brief";
     tokenArray[ static_cast< std::size_t > (Tokens::atParam) ] = "@param";
     tokenArray[ static_cast< std::size_t > (Tokens::atReturn) ] = "@return";
+    tokenArray[ static_cast< std::size_t > (Tokens::atSee) ] = "@see";
+    tokenArray[ static_cast< std::size_t > (Tokens::atLink) ] = "@link";
+    tokenArray[ static_cast< std::size_t > (Tokens::atSince) ] = "@since";
     tokenArray[ static_cast< std::size_t > (Tokens::lPar) ] = "(";
     tokenArray[ static_cast< std::size_t > (Tokens::rPar) ] = ")";
+    tokenArray[ static_cast< std::size_t > (Tokens::lAngleBracket) ] = "<";
+    tokenArray[ static_cast< std::size_t > (Tokens::rAngleBracket) ] = ">";
     tokenArray[ static_cast< std::size_t > (Tokens::comma) ] = ",";
     tokenArray[ static_cast< std::size_t > (Tokens::space) ] = " ";
     tokenArray[ static_cast< std::size_t > (Tokens::newLine) ] = "\n";
