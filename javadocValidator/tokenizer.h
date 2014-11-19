@@ -43,6 +43,9 @@ enum class Tokens : std::uint8_t {
     cppComment,
     cCommentBegin,
     cCommentEnd,
+    asterix,
+    lBra,
+    rBra,
     //backslash,
     NonterminalsCount
 };

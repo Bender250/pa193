@@ -159,11 +159,13 @@ void Parser::filterRepeatingWhitespace()
                 ++it;
             }
 
-            if (tmpIt != it)
-                nonterminalsList.erase(tmpIt, it);
+            if (tmpIt != it) {
+                it = nonterminalsList.erase(tmpIt, it);
 
-            if (it == nonterminalsList.end())
-                break;
+                if (it == nonterminalsList.end())
+                    break;
+            }
+
         }
         //different behavior for newlines is beacuse is doxygen, we distinguish between space and newlines
         if (it->first == Tokens::newLine) {
@@ -179,38 +181,38 @@ void Parser::filterRepeatingWhitespace()
                 ++it;
             }
 
-            if (tmpIt != it)
-                nonterminalsList.erase(tmpIt, it);
+            if (tmpIt != it) {
+                it = nonterminalsList.erase(tmpIt, it);
 
-            if (it == nonterminalsList.end())
-                break;
+                if (it == nonterminalsList.end())
+                    break;
+            }
         }
     }
 }
 
 bool Parser::handleDoxygenComment(std::list< Tokenized >::iterator& it,
-                                  std::tuple< std::string, std::set< std::string >,
-                                              std::string > &out)
+                                  std::set< std::string > &params)
 {
-    std::string brief;
-    std::set< std::string > params;
-    std::string returnVal;
+    bool hasBrief = false;
+    bool hasReturn = false;
 
     while (it != nonterminalsList.end()
            && it->first != Tokens::commentEnd) {
         switch (it->first) {
         case Tokens::atBrief: {
-            if (!brief.empty()) {
+            if (hasBrief) {
                 std::cout << "Error: multiple @brief in comment" << std::endl;
                 return false;
             }
 
             ++it;
 
-            brief = getNextWord(it); //TODO: repair correct load of function name
+            std::string brief = getNextWord(it); //TODO: repair correct load of function name
             if (brief.empty())
                 std::cout << "Warning: @brief is empty" << std::endl;
 
+            hasBrief = true;
             break;
         }
         case Tokens::atParam: {
@@ -229,17 +231,18 @@ bool Parser::handleDoxygenComment(std::list< Tokenized >::iterator& it,
             break;
         }
         case Tokens::atReturn: {
-            if (!returnVal.empty()) {
+            if (hasReturn) {
                 std::cout << "Error: multiple @return in comment" << std::endl;
                 return false;
             }
 
             ++it;
 
-            returnVal = getNextWord(it);
+            std::string returnVal = getNextWord(it);
             if (returnVal.empty())
                 std::cout << "Warning: @return is empty" << std::endl;
 
+            hasReturn = true;
             break;
         }
         default:
@@ -251,27 +254,26 @@ bool Parser::handleDoxygenComment(std::list< Tokenized >::iterator& it,
 
     ++it; //step over comment end
 
-    if (brief.empty()) {
-        std::cout << "Error: no @brief in comment or empty function name" << std::endl;
+    if (!hasBrief) {
+        std::cout << "Error: no @brief in comment" << std::endl;
         return false;
     }
-    out = make_tuple(brief, params, returnVal);
+
+    if (!hasReturn) {
+        std::cout << "Error: no @return in comment" << std::endl;
+        return false;
+    }
     return true;
 }
 
 bool Parser::handleFunction(std::list< Tokenized >::iterator& it,
-                            std::tuple< std::string, std::set< std::string >,
-                                        std::string > &function)
+                            std::set< std::string > &params)
 {
-    std::string name;
-    std::set< std::string > params;
-    std::string returnType;
-
     //find opening left parenthesis
     while (it != nonterminalsList.end()
            && it->first != Tokens::lPar) {
         if (it->first == Tokens::commentBegin) {
-            std::cout << "Warning: doxygen comment has without function."
+            std::cout << "Warning: doxygen comment is without function."
                       << "This is possible for header comment only." << std::endl;
             return true;
         }
@@ -280,7 +282,7 @@ bool Parser::handleFunction(std::list< Tokenized >::iterator& it,
 
     //--it; returnType = getNextWord(it); // get return value
 
-    name = getPreviousWord(it);
+    std::string name = getPreviousWord(it);
 
     if (name.empty()) {
         std::cout << "Error: could not handle function name, maybe wrong placed parenthesis"
@@ -310,7 +312,7 @@ bool Parser::handleFunction(std::list< Tokenized >::iterator& it,
             //break; //WARNING: commented to behave as comma
         }
         case Tokens::comma: {
-            std::string tmp = getPreviousWord(it);
+            std::string tmp = getAttribute(it);
             if (tmp.empty()) {
                 std::cout << "Error: function arg name is empty" << std::endl;
                 return false;
@@ -332,8 +334,6 @@ bool Parser::handleFunction(std::list< Tokenized >::iterator& it,
         ++it;
     }
 
-    function = make_tuple(name, params, returnType);
-
     return true;
 }
 
@@ -349,36 +349,24 @@ void Parser::printArguments(std::set< std::string > dox, std::set< std::string >
 
 bool Parser::iterateTroughtDocumentedFunctions()
 {
-    std::tuple< std::string, std::set< std::string >, std::string > doxygen;
-    std::tuple< std::string, std::set< std::string >, std::string > function;
+    std::set< std::string > doxygenParms;
+    std::set< std::string > functionParams;
     for (auto it = nonterminalsList.begin(); it != nonterminalsList.end(); ++it) {
         if (it->first != Tokens::commentBegin) {
             //nonterminalsList.erase(it);
         }
         else {
-            if (!handleDoxygenComment(it, doxygen))
+            if (!handleDoxygenComment(it, doxygenParms))
                 return false;
 
-            if (!handleFunction(it, function))
+            if (!handleFunction(it, functionParams))
                 return false;
 
-            if (std::get<0>(doxygen) != std::get<0>(function)) {
-                std::cout << "Function name is different to comment"
-                          << std::endl
-                          << "@brief: " << std::get<0>(doxygen)
-                          << std::endl
-                          << "function name: " << std::get<0>(function)
-                          << std::endl;
-                return false;
-            }
-
-            std::set< std::string > dox = std::get<1>(doxygen);
-            std::set< std::string > fun = std::get<1>(function);
-            if (dox != fun) {
+            if (doxygenParms != functionParams) {
                 std::cout << "Arguments are different to @params"
                           << std::endl;
 
-                printArguments(dox, fun);
+                printArguments(doxygenParms, functionParams);
                 //TODO compare
                 return false;
             }
@@ -526,13 +514,26 @@ std::string Parser::getNextWord(std::list< Tokenized >::iterator &it)
 
 std::string Parser::getPreviousWord(std::list< Tokenized >::iterator it)
 {
-    --it;
+    --it; //get before comma
 
     while (it->second == (getEnd(it) - 1)) //skip whitespace between function name and lPar
         --it; //get back before function name
 
-
     return getNextWord(it);
+}
+
+std::string Parser::getAttribute(std::list< Tokenized >::iterator it)
+{
+    std::string att = getPreviousWord(it);
+
+    auto beg = att.find_first_not_of("*&");
+    auto end = att.find_first_of("[");
+    if (beg == std::string::npos)
+        return "";
+    if (end == std::string::npos)
+        return att.substr(beg, end);
+    else
+        return att.substr(beg, end-1); //cut the [
 }
 
 

@@ -68,11 +68,9 @@ private:
 
     ////          Auxiliary functions          /////
     bool handleDoxygenComment(std::list< Tokenized >::iterator& it,
-                              std::tuple< std::string, std::set< std::string >,
-                                          std::string> &out);
+                                      std::set< std::string > &params);
     bool handleFunction(std::list< Tokenized >::iterator& it,
-                        std::tuple< std::string, std::set< std::string >,
-                                    std::string > &function);
+                        std::set< std::string > &params);
 
     void printArguments(std::set< std::string > dox, std::set< std::string > fun);
 
@@ -82,9 +80,10 @@ private:
     std::string getTextLine(std::list< Tokenized >::iterator &it);
 
     bool isDoxygenComment(std::list< Tokenized >::iterator it);
-    bool isSpaceOrTab(std::list<Tokenized>::iterator it);
-    std::string getNextWord(std::list<Tokenized>::iterator &it);
-    bool isKeyword(std::list<Tokenized>::iterator it);
+    bool isSpaceOrTab(std::list< Tokenized >::iterator it);
+    std::string getNextWord(std::list< Tokenized >::iterator &it);
+    bool isKeyword(std::list< Tokenized >::iterator it);
+    std::string getAttribute(std::list< Tokenized >::iterator it);
 };
 
 #endif // PARSER_H
