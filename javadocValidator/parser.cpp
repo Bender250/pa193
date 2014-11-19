@@ -161,6 +161,9 @@ void Parser::filterRepeatingWhitespace()
 
             if (tmpIt != it)
                 nonterminalsList.erase(tmpIt, it);
+
+            if (it == nonterminalsList.end())
+                break;
         }
         //different behavior for newlines is beacuse is doxygen, we distinguish between space and newlines
         if (it->first == Tokens::newLine) {
@@ -178,6 +181,9 @@ void Parser::filterRepeatingWhitespace()
 
             if (tmpIt != it)
                 nonterminalsList.erase(tmpIt, it);
+
+            if (it == nonterminalsList.end())
+                break;
         }
     }
 }
@@ -245,6 +251,10 @@ bool Parser::handleDoxygenComment(std::list< Tokenized >::iterator& it,
 
     ++it; //step over comment end
 
+    if (brief.empty()) {
+        std::cout << "Error: no @brief in comment or empty function name" << std::endl;
+        return false;
+    }
     out = make_tuple(brief, params, returnVal);
     return true;
 }
@@ -259,8 +269,14 @@ bool Parser::handleFunction(std::list< Tokenized >::iterator& it,
 
     //find opening left parenthesis
     while (it != nonterminalsList.end()
-           && it->first != Tokens::lPar)
+           && it->first != Tokens::lPar) {
+        if (it->first == Tokens::commentBegin) {
+            std::cout << "Warning: doxygen comment has without function."
+                      << "This is possible for header comment only." << std::endl;
+            return true;
+        }
         ++it;
+    }
 
     //--it; returnType = getNextWord(it); // get return value
 
