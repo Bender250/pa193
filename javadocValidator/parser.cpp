@@ -313,6 +313,11 @@ bool Parser::parseHeader(std::list< Tokenized >::iterator it)
             hasVersion = true;
             break;
         }
+        case Tokens::commentBegin: {
+                std::cout << "Error: new comment start inside of header comment"
+                          << std::endl;
+                return false;
+            }
         default:
             break;
         }
